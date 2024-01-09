@@ -19,9 +19,7 @@ const (
 	dformat       = "15 h and 4 m"
 )
 
-var (
-	bigBang = time.Unix(0, 0).UTC()
-)
+var bigBang = time.Unix(0, 0).UTC()
 
 type State struct {
 	Start int64 `json:"start"`
@@ -66,29 +64,42 @@ type InternOption struct {
 	At time.Time
 }
 
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
 func readState(ctx context.Context) *GoTime {
 	home := ctx.Value("gotimeDir")
 	stateFile := fmt.Sprintf("%s/state", home)
+	tagFile := fmt.Sprintf("%s/tags", home)
 
-	rawState, err := os.ReadFile(stateFile)
 	var oldState State
-	if err != nil {
-		slog.Debug("reading state file %s: %s", stateFile, err)
-	}
-	err = json.Unmarshal(rawState, &oldState)
-	if err != nil {
-		slog.Debug("unmarshal state, rawState %s: %s", string(rawState), err)
-		oldState = State{}
+	if fileExists(stateFile) {
+		rawState, err := os.ReadFile(stateFile)
+		if err != nil {
+			slog.Debug("reading state file %s: %s", stateFile, err)
+		}
+		err = json.Unmarshal(rawState, &oldState)
+		if err != nil {
+			slog.Debug("unmarshal state, rawState %s: %s", string(rawState), err)
+			oldState = State{}
+		}
 	}
 
-	rawTags, err := os.ReadFile(fmt.Sprintf("%s/tags", home))
 	var tags []Tag
-	if err != nil {
-		tags = make([]Tag, 0)
-	}
-	err = json.Unmarshal(rawTags, &tags)
-	if err != nil {
-		fmt.Printf("can't unmarshal tags file: %s", err)
+	if fileExists(tagFile) {
+		rawTags, err := os.ReadFile(tagFile)
+		if err != nil {
+			tags = make([]Tag, 0)
+		}
+		err = json.Unmarshal(rawTags, &tags)
+		if err != nil {
+			tags = make([]Tag, 0)
+		}
 	}
 
 	g := &GoTime{
@@ -100,7 +111,7 @@ func readState(ctx context.Context) *GoTime {
 }
 
 func saveToFile(ctx context.Context, file string, v any) {
-	home := ctx.Value("gotimeDir")
+	home := ctx.Value("gotimeDir").(string)
 	path := fmt.Sprintf("%s/%s", home, file)
 
 	stateJson, err := json.Marshal(v)
@@ -109,18 +120,24 @@ func saveToFile(ctx context.Context, file string, v any) {
 		os.Exit(1)
 	}
 
-	f, err := os.Create(path)
-	defer f.Close()
-	if err != nil {
-		fmt.Println(err)
+	if err := os.MkdirAll(home, 0770); err != nil {
+		fmt.Printf("Error while writing state file: %s, %+v", path, err)
 		os.Exit(1)
 	}
+	f, err := os.Create(path)
+	if err != nil {
+		fmt.Printf("Error while writing state file: %s, %+v", path, err)
+		os.Exit(1)
+	}
+	defer f.Close()
+
 	_, err = f.Write(stateJson)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("Error while writing state file: %s, %+v", path, err)
 		os.Exit(1)
 	}
 }
+
 func removeState(ctx context.Context) {
 	home := ctx.Value("gotimeDir")
 	path := fmt.Sprintf("%s/%s", home, "state")
@@ -201,6 +218,7 @@ type Timespan time.Duration
 func (t Timespan) Format(format string) string {
 	return time.Unix(0, 0).UTC().Add(time.Duration(t)).Format(format)
 }
+
 func (t Timespan) String() string {
 	return color.Green().Sprint(t.Format(dformat))
 }
