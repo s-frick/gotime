@@ -9,15 +9,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	at string
-)
+var at string
 
 func init() {
 	// cobra.OnInitialize(initConfig)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(stopCmd)
+	rootCmd.AddCommand(statusCmd)
 	startCmd.Flags().StringVar(&at, "at", "", "Start the frame at a specific time. e.g. \"09:25\"")
 	stopCmd.Flags().StringVar(&at, "at", "", "Stop the frame at a specific time. e.g. \"09:25\"")
 

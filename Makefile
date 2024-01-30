@@ -1,3 +1,5 @@
+all: build test
+
 clean: 
 	@if [ -d "bin" ]; then rm -r bin; fi
 

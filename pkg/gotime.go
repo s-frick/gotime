@@ -22,8 +22,8 @@ const (
 var bigBang = time.Unix(0, 0).UTC()
 
 type State struct {
-	Start int64 `json:"start"`
 	Tags  []Tag `json:"tags"`
+	Start int64 `json:"start"`
 }
 
 type Tag string
@@ -37,21 +37,21 @@ type Time struct {
 }
 
 func (t Time) String() string {
-	return color.Green().Sprint(t.Time.Format("15:04"))
+	return color.Green().Sprint(t.Format("15:04"))
 }
 
 type ID string
 
 type GoTime struct {
-	state State
 	tags  []Tag
+	state State
 }
 
 type Frame struct {
 	Start time.Time `json:"start"`
 	End   time.Time `json:"end"`
-	Tags  []Tag     `json:"tags"`
 	ID    ID        `json:"id"`
+	Tags  []Tag     `json:"tags"`
 }
 
 type Frames []Frame
@@ -62,6 +62,26 @@ type Options struct {
 
 type InternOption struct {
 	At time.Time
+}
+
+type Stats struct {
+	stop         Time
+	sinceStarted Timespan
+	duration     Timespan
+}
+
+func stats(f Frame) Stats {
+	s := f.Start
+	e := f.End
+	d := e.Sub(s)
+	now := time.Unix(time.Now().Unix(), 0)
+	sinceStarted := now.Sub(s)
+
+	return Stats{
+		stop:         Time{Time: &e},
+		sinceStarted: Timespan(sinceStarted),
+		duration:     Timespan(d),
+	}
 }
 
 func fileExists(filename string) bool {
@@ -209,7 +229,7 @@ func Stop(ctx context.Context, opt Options) {
 
 func generateID(f Frame) string {
 	h := sha1.New()
-	h.Write([]byte(fmt.Sprintf("%s%s%s", f.Start, f.End, f.Tags)))
+	fmt.Fprintf(h, "%s%s%s", f.Start, f.End, f.Tags)
 	return hex.EncodeToString(h.Sum(nil))
 }
 
@@ -223,24 +243,22 @@ func (t Timespan) String() string {
 	return color.Green().Sprint(t.Format(dformat))
 }
 
+func (g *GoTime) generateFrame(at time.Time) Frame {
+	f := Frame{Start: time.Unix(g.state.Start, 0).Truncate(truncToMinute), End: at.Truncate(truncToMinute), Tags: g.state.Tags}
+	return f
+}
+
 func (g *GoTime) stop(ctx context.Context, opt InternOption) Frame {
-	end := opt.At
-	f := Frame{Start: time.Unix(g.state.Start, 0).Truncate(truncToMinute), End: end.Truncate(truncToMinute), Tags: g.state.Tags}
+	f := g.generateFrame(opt.At)
 	id := generateID(f)
 	f.ID = ID(id)
 
-	s := f.Start
-	e := f.End
-	d := e.Sub(s)
-	now := time.Unix(time.Now().Unix(), 0)
-	sinceStarted := now.Sub(s)
+	stats := stats(f)
 
 	saveFrame(ctx, f)
 	removeState(ctx)
-	sinceStartedFmt := Timespan(sinceStarted).String()
-	dFmt := Timespan(d).String()
 
-	fmt.Printf("Stopping frame %s at %s, started %s ago and lasted %s minutes.\n", fmt.Sprint(f.Tags), Time{Time: &f.End}, sinceStartedFmt, dFmt)
+	fmt.Printf("Stopping frame %s at %s, started %s ago and lasted %s minutes.\n", fmt.Sprint(f.Tags), stats.stop.String(), stats.sinceStarted.String(), stats.duration.String())
 	return f
 }
 
