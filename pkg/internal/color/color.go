@@ -13,7 +13,7 @@ var (
 	blue   = "\033[34m"
 	purple = "\033[35m"
 	cyan   = "\033[36m"
-	gray   = "\033[37m"
+	gray   = "\033[90m"
 	white  = "\033[97m"
 )
 
@@ -54,6 +54,7 @@ func (c Colorizer) Sprintf(format string, a ...any) string {
 	cFormat := fmt.Sprintf("%s%s%s", c.color, format, reset)
 	return fmt.Sprintf(cFormat, a...)
 }
+
 func (c Colorizer) Sprintln(a ...any) string {
 	strings := fmt.Sprintf("%s%s%s", c.color, fmt.Sprint(a...), reset)
 	return fmt.Sprintln(strings)
@@ -63,6 +64,7 @@ func (c Colorizer) Printf(format string, a ...any) (n int, err error) {
 	cFormat := fmt.Sprintf("%s%s%s", c.color, format, reset)
 	return fmt.Printf(cFormat, a...)
 }
+
 func (c Colorizer) Sprint(a ...any) string {
 	strings := fmt.Sprintf("%s%s%s", c.color, fmt.Sprint(a...), reset)
 	return fmt.Sprint(strings)
@@ -71,24 +73,31 @@ func (c Colorizer) Sprint(a ...any) string {
 func Red() TermColor {
 	return Colorizer{color: red}
 }
+
 func Green() TermColor {
 	return Colorizer{color: green}
 }
+
 func Yellow() TermColor {
 	return Colorizer{color: yellow}
 }
+
 func Blue() TermColor {
 	return Colorizer{color: blue}
 }
+
 func Purple() TermColor {
 	return Colorizer{color: purple}
 }
+
 func Cyan() TermColor {
 	return Colorizer{color: cyan}
 }
+
 func Gray() TermColor {
 	return Colorizer{color: gray}
 }
+
 func White() TermColor {
 	return Colorizer{color: white}
 }

@@ -6,10 +6,16 @@ import (
 	"os"
 
 	homedir "github.com/mitchellh/go-homedir"
+	gotime "github.com/s-frick/go-time-track/pkg"
 	"github.com/spf13/cobra"
 )
 
-var at string
+var (
+	at        string
+	logJson   bool
+	logCsv    bool
+	logPretty bool = true
+)
 
 func init() {
 	// cobra.OnInitialize(initConfig)
@@ -17,6 +23,13 @@ func init() {
 	rootCmd.AddCommand(startCmd)
 	rootCmd.AddCommand(stopCmd)
 	rootCmd.AddCommand(statusCmd)
+	rootCmd.AddCommand(logCmd)
+
+	logCmd.Flags().BoolVarP(&logJson, "json", "j", false, "Log in json format")
+	logCmd.Flags().BoolVarP(&logCsv, "csv", "c", false, "Log in csv format")
+	logCmd.Flags().BoolVar(&logPretty, "pretty", true, "Log in pretty format")
+	logCmd.MarkFlagsMutuallyExclusive("json", "csv", "pretty")
+
 	startCmd.Flags().StringVar(&at, "at", "", "Start the frame at a specific time. e.g. \"09:25\"")
 	stopCmd.Flags().StringVar(&at, "at", "", "Stop the frame at a specific time. e.g. \"09:25\"")
 
@@ -68,7 +81,7 @@ func ExecuteContext() {
 		os.Exit(1)
 	}
 	gotimeDir := fmt.Sprintf("%s/.gotime", home)
-	ctx := context.WithValue(context.Background(), "gotimeDir", gotimeDir)
+	ctx := context.WithValue(context.Background(), gotime.ContextKeyGoTimeDir, gotimeDir)
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		fmt.Println(err)
 		os.Exit(1)

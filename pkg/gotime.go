@@ -15,8 +15,11 @@ import (
 )
 
 const (
-	truncToMinute = (1 * time.Minute)
-	dformat       = "15 h and 4 m"
+	truncToMinute  = (1 * time.Minute)
+	dformat        = "15 h and 4 m"
+	dateTimeFormat = "02.01.2006 15:04"
+	timeFormat     = "15:04"
+	dateFormat     = "02.01.2006"
 )
 
 var bigBang = time.Unix(0, 0).UTC()
@@ -57,7 +60,8 @@ type Frame struct {
 type Frames []Frame
 
 type Options struct {
-	At string
+	At      string
+	LogType LogType
 }
 
 type InternOption struct {
@@ -93,7 +97,7 @@ func fileExists(filename string) bool {
 }
 
 func readState(ctx context.Context) *GoTime {
-	home := ctx.Value("gotimeDir")
+	home := GetGoTimeDir(ctx)
 	stateFile := fmt.Sprintf("%s/state", home)
 	tagFile := fmt.Sprintf("%s/tags", home)
 
@@ -131,7 +135,7 @@ func readState(ctx context.Context) *GoTime {
 }
 
 func saveToFile(ctx context.Context, file string, v any) {
-	home := ctx.Value("gotimeDir").(string)
+	home := GetGoTimeDir(ctx)
 	path := fmt.Sprintf("%s/%s", home, file)
 
 	stateJson, err := json.Marshal(v)
@@ -159,7 +163,7 @@ func saveToFile(ctx context.Context, file string, v any) {
 }
 
 func removeState(ctx context.Context) {
-	home := ctx.Value("gotimeDir")
+	home := GetGoTimeDir(ctx)
 	path := fmt.Sprintf("%s/%s", home, "state")
 	err := os.Remove(path)
 	if err != nil {
@@ -262,8 +266,8 @@ func (g *GoTime) stop(ctx context.Context, opt InternOption) Frame {
 	return f
 }
 
-func saveFrame(ctx context.Context, f Frame) {
-	home := ctx.Value("gotimeDir")
+func readFrames(ctx context.Context) Frames {
+	home := GetGoTimeDir(ctx)
 	framesFile := fmt.Sprintf("%s/frames", home)
 
 	rawFrames, err := os.ReadFile(framesFile)
@@ -277,7 +281,10 @@ func saveFrame(ctx context.Context, f Frame) {
 		frames = make([]Frame, 0)
 	}
 
-	frames = append(frames, f)
+	return frames
+}
 
-	saveToFile(ctx, "frames", frames)
+func saveFrame(ctx context.Context, f Frame) {
+	frames := readFrames(ctx)
+	saveToFile(ctx, "frames", append(frames, f))
 }
