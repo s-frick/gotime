@@ -19,7 +19,12 @@ A constantly changing list of things that work or should work in future.
   - [ ] stop on start
   - [ ] allow start/stop times in future
   - [ ] ...
-- [ ] Frame Log, as of now you can inspect `~/.gotime/frames`
+- [ ] Frame Log
+  - [x] basic Frame Log functionality `gotime log`
+  - [x] pretty log
+  - [x] json log
+  - [x] csv log
+  - [ ] filter by tags, time ranges
 - [ ] Aggregations
 - [ ] Reports
 
