@@ -4,8 +4,9 @@ on:
   push:
   pull_request:
   release:
-    - created
-    - edited
+    types:
+      - created
+      - edited
 
 jobs:
   xgo:
